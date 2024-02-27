@@ -1,3 +1,5 @@
+# This script was tested on SonarQube 9.9.4
+
 # Constants / Inputs
 #   sqUrl:
 #     The URL of the SonarQube instance
