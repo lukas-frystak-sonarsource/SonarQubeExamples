@@ -14,7 +14,7 @@ if (($null -ne $duplicatedFileNamesGroupInfoObjects) -and ($duplicatedFileNamesG
     $filesToRename = $duplicatedFileNamesGroups | Where-Object { $_.Directory.Name -ne "COPYPROC" }
     Write-Output "$($filesToRename.Count) files will be renamed"
     Write-Output "Changing file extensions..."
-    $filesToRename | Rename-Item -NewName { $_.Name -replace '.cpy', '.cpyc' } -Verbose
+    $filesToRename | Rename-Item -NewName { $_.Name -replace '.cpy', '.cpyx' } -Verbose
     Write-Output "File extensions changed"
 }
 else {
