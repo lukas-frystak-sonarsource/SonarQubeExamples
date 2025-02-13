@@ -1,10 +1,10 @@
 # Required setup
-$TOKEN = "squ_3f2bb67dcd83212242375673360bd0e935d40e48";
-$SONARQUBE_URL = "http://localhost:20251"
+$TOKEN = "";
+$SONARQUBE_URL = ""
 
 # Email of the user to migrate to SAML and the intended external identity.
-$USER_EMAIL = "ahoj@test.com"
-$USER_EXTERNAL_ID = "ahoj-tets"
+$USER_EMAIL = ""
+$USER_EXTERNAL_ID = ""
 
 ########################################################################
 
