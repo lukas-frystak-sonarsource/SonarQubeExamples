@@ -60,7 +60,7 @@ for ($i = 0; $i -lt $initialProjectList.Count; $i++) {
 }
 
 $csvFileName = "SonarQubeProjectInformation.csv"
-$projectInformation | ConvertTo-Csv > $csvFileName
+$projectInformation | ConvertTo-Csv -NoTypeInformation > $csvFileName
 
 Write-Output "Script finished! The information was saved in $csvFileName"
 
