@@ -5,3 +5,19 @@ A collection of SonarQube-related examples.
 > The examples in this repository are just that - *examples*!
 > 
 > They are meant to serve as inspiration; they are not tested for production systems.
+
+## Get SonarQube Project Information
+
+### How to use this script
+
+1. PowerShell is used for all commands!
+1. Download the script to a your machine:
+    ```
+
+    ```
+1. The script takes the SonarQube URL and <u>administrator</u> token as inputs.
+    - The token can be generated in the SonarQube UI. Go to *My account --> Security --> Generate tokens*
+1. Run the script
+    ```
+    ./GetSonarQubeProjectInformation.ps1 <SONARQUBE_URL> <SONARQUBE_TOKEN>
+    ```
