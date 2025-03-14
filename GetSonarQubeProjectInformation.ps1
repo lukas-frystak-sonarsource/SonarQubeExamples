@@ -18,6 +18,9 @@ $global:httpRequestHeaders = @{
     Authorization = $basicAuthValue
 }
 
+# Set progeress preference
+$Global:ProgressPreference = "SilentlyContinue"
+
 # Get all projects with the api/projects/search
 $initialProjectList = [System.Collections.ArrayList]::new()
 $currentPage = 0

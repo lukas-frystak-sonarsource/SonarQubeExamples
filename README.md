@@ -13,7 +13,7 @@ A collection of SonarQube-related examples.
 1. PowerShell is used for all commands!
 1. Download the script to a your machine:
     ```
-
+    Invoke-WebRequest -OutFile "GetSonarQubeProjectInformation.ps1" -Uri "https://raw.githubusercontent.com/lukas-frystak-sonarsource/SonarQubeExamples/refs/heads/lukas/2025-03-12/GetSonarQubeProjectInformation.ps1"
     ```
 1. The script takes the SonarQube URL and <u>administrator</u> token as inputs.
     - The token can be generated in the SonarQube UI. Go to *My account --> Security --> Generate tokens*
