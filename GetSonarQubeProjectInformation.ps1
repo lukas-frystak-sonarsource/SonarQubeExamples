@@ -67,7 +67,6 @@ catch {
 }
 
 if ($null -ne $response) {
-    $response.Content > templates.json
     $content = $response.Content | ConvertFrom-Json
     $permissionTemplatesInfo = $content.permissionTemplates | Where-Object { -not [string]::IsNullOrEmpty($_.projectKeyPattern) } | ForEach-Object { $_ | Select-Object -Property Name, projectKeyPattern }
 }
