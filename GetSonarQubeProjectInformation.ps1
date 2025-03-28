@@ -1,4 +1,6 @@
-# Required setup
+###########################################################################################################
+###  Required setup
+###########################################################################################################
 if ($args.Count -ne 2) {
     Write-Error "Unexpected number of arguments! 2 arguments are expeted!"
     Write-Output ""
@@ -21,7 +23,9 @@ $global:httpRequestHeaders = @{
 # Set progeress preference
 $Global:ProgressPreference = "SilentlyContinue"
 
-# Get all projects with the api/projects/search
+###########################################################################################################
+### Get all projects with the 'api/projects/search'
+###########################################################################################################
 $initialProjectList = [System.Collections.ArrayList]::new()
 $currentPage = 0
 
@@ -46,12 +50,43 @@ do {
 
 } while (($pageIndex * $pageSize) -lt $totalItems)
 
-# Sanitize the project information is a new list. Collect additional information
+###########################################################################################################
+### Get permission template information
+###########################################################################################################
+$response = $null
+
+try {
+    $response = Invoke-WebRequest -Headers $global:httpRequestHeaders `
+        -Method GET `
+        -Uri "$global:SONARQUBE_URL/api/permissions/search_templates"
+}
+catch {
+    $statusCode = $_.Exception.Response.StatusCode.value__
+    Write-Error "Error getting permission templates! Status code: $statusCode"
+    Exit 1
+}
+
+if ($null -ne $response) {
+    $response.Content > templates.json
+    $content = $response.Content | ConvertFrom-Json
+    $permissionTemplatesInfo = $content.permissionTemplates | Where-Object { -not [string]::IsNullOrEmpty($_.projectKeyPattern) } | ForEach-Object { $_ | Select-Object -Property Name, projectKeyPattern }
+}
+
+if ($null -eq $permissionTemplatesInfo) {
+    Write-Error "Permission templates info is invalid! Investigation needed..."
+    Exit 1
+}
+
+###########################################################################################################
+### Sanitize the project information in a new list. Collect additional information
+###########################################################################################################
 $projectInformation = [System.Collections.ArrayList]::new()
 
 for ($i = 0; $i -lt $initialProjectList.Count; $i++) {
     $prjInfo = [ProjectInformation]::new($initialProjectList[$i])
     $prjInfo.GetMainBranchName()
+    $prjInfo.GetDevOpsBinding()
+    $prjInfo.DoesMatchPermissionTemplateKey($permissionTemplatesInfo)
     $projectInformation.Add($prjInfo) > $null
 
     if (($i % 200) -eq 0) {
@@ -64,21 +99,30 @@ $projectInformation | ConvertTo-Csv -NoTypeInformation > $csvFileName
 
 Write-Output "Script finished! The information was saved in $csvFileName"
 
-###
+###########################################################################################################
 ### CLASS DEFINITION
-###
+###########################################################################################################
 
 class ProjectInformation {
+    # Basic project properties
     [string]$key
     [string]$name
     [string]$qualifier
     [string]$visibility
     [string]$lastAnalysisDate
     [string]$mainBranchName
-    #[string]$bitbucketRepoName
-    #[string]$doesMatchPermissionTemplate
-    #[string]$permissionTemplateName
-    #[string]$dceKey
+    # Permission template association
+    [bool]$doesMatchPermissionTemplate
+    [string]$permissionTemplateName
+    [string]$permissionTemplatePattern
+    # DevOps properties
+    [bool]$isBoundToDevOpsRepo
+    [string]$devOpsPlatformType
+    [string]$devOpsPlatformKey
+    [string]$devOpsProject
+    [string]$repositoryName
+    [bool]$isMonorepo
+    [string]$devOpsPlatformUrl
 
     ProjectInformation($apiObject) {
         $this.key = $apiObject.key
@@ -135,8 +179,82 @@ class ProjectInformation {
         }
     }
 
-    [void] DoesMatchPermissionTemplateKey([string[]]$templateKeyPatterns) {
-        # TODO
-        # The input could be just patterns, or patterns + template names
+    [void] DoesMatchPermissionTemplateKey($permissionTemplatesInfo) {
+        foreach ($template in $permissionTemplatesInfo) {
+            # Note: I am prepending the start of string/line characeter - ^ -
+            #       as in my testing it was needed to get matching behavior
+            #       to how templates are appliend on the SonarQube Server
+            $match = $this.key | Select-String -Pattern $("^" + $template.projectKeyPattern) -CaseSensitive
+            if ($null -ne $match) {
+                $this.doesMatchPermissionTemplate = $true
+                $this.permissionTemplateName = $template.name
+                $this.permissionTemplatePattern = $template.projectKeyPattern
+            }
+        }
+    }
+
+    [void] GetDevOpsBinding() {
+        $response = $null
+        try {
+            $response = Invoke-WebRequest -Headers $global:httpRequestHeaders `
+                -Method GET `
+                -Uri "$global:SONARQUBE_URL/api/alm_settings/get_binding?project=$($this.key)"
+        }
+        catch {
+            $statusCode = $_.Exception.Response.StatusCode.value__
+
+            if ($statusCode -eq 404) {
+                Write-Output "Project not bound"
+                $this.isBoundToDevOpsRepo = $false
+            }
+            elseif ($statusCode -eq 401) {
+                Write-Output "Unauthorized to execute request: $($_.TargetObject.RequestUri)"
+                Exit 1
+            }
+            else {
+                Write-Error "Unexpected error - investigate!"
+                Exit 1
+            }
+        }
+
+        if ($null -ne $response) {
+            $this.isBoundToDevOpsRepo = $true
+            $content = $response.Content | ConvertFrom-Json
+            $this.ProcessDevOpsBinding($content)
+        }
+    }
+    
+    hidden [void] ProcessDevOpsBinding($responseContentObj) {
+        $this.devOpsPlatformType = $responseContentObj.alm
+
+        switch ($this.devOpsPlatformType) {
+            "azure" {
+                # TODO Check which properties are uniform accross all devops platform so that code is not duplicated
+                $this.devOpsPlatformKey = $responseContentObj.key
+                $this.devOpsProject = $responseContentObj.slug
+                $this.repositoryName = $responseContentObj.repository
+                $this.isMonorepo = $responseContentObj.monorepo
+                $this.devOpsPlatformUrl = $responseContentObj.url
+            }
+            "bitbucket" {
+                # TODO Check which properties are uniform accross all devops platform so that code is not duplicated
+                $this.devOpsPlatformKey = $responseContentObj.key
+                $this.devOpsProject = $responseContentObj.repository
+                $this.repositoryName = $responseContentObj.slug
+                $this.isMonorepo = $responseContentObj.monorepo
+                $this.devOpsPlatformUrl = $responseContentObj.url
+            }
+            "github" {
+                # TODO
+            }
+            "gitlab" { 
+                # TODO
+            }
+            Default {
+                Write-Error "Unexpected DevOps platform found! Investation needed."
+                Exit 1
+            }
+        }
+
     }
 }
