@@ -31,6 +31,7 @@ The output in the CSV file is the following (with some comments):
     - SonarQube object qualifier
         - *Note: TRK = project*
     - Visibility
+        - *Note: Tall projects should be private*
     - Last analysis date
     - Main branch name in SonarQube
         - *Note: this should match the default branch name in the corresponding repository*
