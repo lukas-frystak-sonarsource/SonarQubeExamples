@@ -17,7 +17,33 @@ A collection of SonarQube-related examples.
     ```
 1. The script takes the SonarQube URL and <u>administrator</u> token as inputs.
     - The token can be generated in the SonarQube UI. Go to *My account --> Security --> Generate tokens*
-1. Run the script
+1. **Run the script**
     ```
     ./GetSonarQubeProjectInformation.ps1 <SONARQUBE_URL> <SONARQUBE_TOKEN>
     ```
+
+**The output**
+
+The output in the CSV file is the following (with some comments):
+- "Basic" project properties
+    - SonarQube project key
+    - SonarQube project name
+    - SonarQube object qualifier
+        - *Note: TRK = project*
+    - Visibility
+    - Last analysis date
+    - Main branch name in SonarQube
+        - *Note: this should match the default branch name in the corresponding repository*
+- Permission template association (*Note: verify that the project follow the naming convention*)
+    - doesMatchPermissionTemplate
+    - permissionTemplateName
+    - permissionTemplatePattern
+- DevOps properties
+    - isBoundToDevOpsRepo
+        - *Note: all SonarQube projects should be bound to their corresponding repository*
+    - devOpsPlatformType
+    - devOpsPlatformKey
+    - devOpsProject
+    - repositoryName
+    - isMonorepo
+    - devOpsPlatformUrl
