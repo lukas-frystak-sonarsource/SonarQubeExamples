@@ -203,15 +203,14 @@ class ProjectInformation {
             $statusCode = $_.Exception.Response.StatusCode.value__
 
             if ($statusCode -eq 404) {
-                Write-Output "Project not bound"
                 $this.isBoundToDevOpsRepo = $false
             }
-            elseif ($statusCode -eq 401) {
-                Write-Output "Unauthorized to execute request: $($_.TargetObject.RequestUri)"
+            elseif (($statusCode -eq 401) -or ($statusCode -eq 403)) {
+                Write-Error -Message "Unauthorized to execute request: $($_.TargetObject.RequestUri). Browse access to all projects is required!" -Exception $_.Exception
                 Exit 1
             }
             else {
-                Write-Error "Unexpected error - investigate!"
+                Write-Error -Message "Unexpected error - investigate!" -Exception $_.Exception
                 Exit 1
             }
         }
