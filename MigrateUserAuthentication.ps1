@@ -2,11 +2,23 @@
 $TOKEN = "";
 $SONARQUBE_URL = ""
 
-# Email of the user to migrate to SAML and the intended external identity.
+# Email of the user to migrate to another authentication method and the intended external identity.
 $USER_EMAIL = ""
 $USER_EXTERNAL_ID = ""
 
+# Valid options are: github, gitlab, bitbucket, saml, LDAP or LDAP_{serverKey}
+$EXT_AUTHENTICATION_METHOD = "saml"
+
 ########################################################################
+
+# Validate authentication method selection
+$validAuthMethods = @("github", "gitlab", "bitbucket", "saml", "LDAP")
+# Note: LDAP_{serverKey} pattern validation would require additional logic for specific server keys
+
+if (($EXT_AUTHENTICATION_METHOD -cnotin $validAuthMethods) -and ($EXT_AUTHENTICATION_METHOD -notmatch "^LDAP_\w+$")) {
+    Write-Error "Invalid authentication method: '$EXT_AUTHENTICATION_METHOD'. Valid options are: $($validAuthMethods -join ', ') or LDAP_{serverKey}"
+    Exit 1
+}
 
 # Authorization token must be passed in a header.
 $httpRequestHeaders = @{
@@ -29,7 +41,7 @@ if ($null -eq $requiredUser) {
 }
 
 # Create the body for the request with the updated information.
-$body = "{""externalProvider"": ""saml"", ""externalLogin"": ""$USER_EXTERNAL_ID""}"
+$body = "{""externalProvider"": ""$EXT_AUTHENTICATION_METHOD"", ""externalLogin"": ""$USER_EXTERNAL_ID""}"
 try {
     $body | ConvertFrom-Json > $null
 }
